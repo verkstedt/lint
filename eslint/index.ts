@@ -15,7 +15,6 @@ import { recommended as eslintCommentsRecommended } from '@eslint-community/esli
 import type reactPlugin from '@eslint-react/eslint-plugin';
 import type { Linter } from 'eslint';
 import { globalIgnores } from 'eslint/config';
-import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
 import {
   createNodeResolver,
   flatConfigs as importFlatConfigs,
@@ -345,18 +344,20 @@ async function createVerkstedtConfig({
     },
     {
       name: 'import',
-      get() {
+      async get() {
+        const resolver = usesTypeScript
+          ? (
+              await import('eslint-import-resolver-typescript')
+            ).createTypeScriptImportResolver()
+          : createNodeResolver();
+
         return [
           importFlatConfigs.recommended,
           usesTypeScript && importFlatConfigs.typescript,
           usesReact && importFlatConfigs.react,
           {
             settings: {
-              'import-x/resolver-next': [
-                usesTypeScript
-                  ? createTypeScriptImportResolver()
-                  : createNodeResolver(),
-              ],
+              'import-x/resolver-next': [resolver],
             },
           },
         ]
@@ -464,18 +465,6 @@ async function createVerkstedtConfig({
             },
           ];
         }
-      },
-    },
-    {
-      name: 'typescript-import',
-      get() {
-        if (usesTypeScript) {
-          // This package is not used anywhere in the config, but needs
-          // to exist for EsLint to resolve TypeScript imports using
-          // tsconfig (e.g. respecting `baseUrl` and `paths`).
-          import.meta.resolve('eslint-import-resolver-typescript');
-        }
-        return null;
       },
     },
     {
