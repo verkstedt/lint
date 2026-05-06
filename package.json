@@ -1,6 +1,6 @@
 {
   "name": "@verkstedt/lint",
-  "version": "11.0.0-rc.7",
+  "version": "11.0.0-rc.8",
   "description": "Linting configuration for verkstedt projects",
   "keywords": [
     "lint",
