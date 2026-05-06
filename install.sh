@@ -301,21 +301,12 @@ eslint_setup ()
 get_verkstedt_lint_pkg ()
 {
     lint_dir="$1"
-    npm_cache_dir=$( npm config get cache 2>/dev/null )
-    # if this script is called from a npm cache, it means it was
-    # called as `npx @verkstedt/lint`. Otherwise it was probably called
-    # from local checkout, e.g. `npx ~/src/@verkstedt/lint`.
-    if echo "$lint_dir" | grep -qF "$npm_cache_dir"
-    then
-        (
-            cd "$lint_dir"
-            name="@verkstedt/lint"
-            version=$( npm pkg get version | sed -E 's/^"|"$//g' )
-            printf '%s@%s' "$name" "$version"
-        )
-    else
-        echo "$lint_dir"
-    fi
+    (
+        cd "$lint_dir"
+        name="@verkstedt/lint"
+        version=$( npm pkg get version | sed -E 's/^"|"$//g' )
+        printf '%s@%s' "$name" "$version"
+    )
 }
 
 ###
@@ -352,14 +343,14 @@ main ()
             "$target_dir/package.json"
     )
 
-    npm_cache_dir=$( npm config get cache 2>/dev/null )
     is_local_install=$(
+        npm_cache_dir=$( npm config get cache 2>/dev/null )
         # if this script is called from a npm cache, it means it was
         # called as `npx @verkstedt/lint`. Otherwise it was probably called
         # from local checkout, e.g. `npx ~/src/@verkstedt/lint`.
         if ! echo "$lint_dir" | grep -qF "$npm_cache_dir"
         then
-            echo "1"
+            echo 1
         fi
     )
 
