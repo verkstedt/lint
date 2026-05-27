@@ -51,10 +51,21 @@ pkg_uninstall ()
 {
     if [ -e yarn.lock ]
     then
-        (
-            set -x
-            yarn remove "$@"
-        )
+        # With npm you can pass a list of pkgs to `uninstall` and it
+        # will just ignore non–installed ones. With Yarn it will freak
+        # out.
+        for pkg in "$@"
+        do
+            pkg=$( printf "%s" "$pkg" | cut -d@ -f1 )
+            has_pkg=$( jq --arg pkg "$pkg" '(.dependencies + .devDependencies) | has($pkg)' package.json )
+            if [ true = "$has_pkg" ]
+            then
+                (
+                    set -x
+                    yarn remove --mode=skip-build "$pkg"
+                )
+            fi
+        done
     else
         (
             set -x
@@ -354,27 +365,8 @@ main ()
         fi
     )
 
-    printf "\n${ansi_bold}REMOVE CONFLICTING NPM PACKAGES${ansi_reset}\n"
-    pkg_uninstall \
-        eslint-plugin-jsx-a11y \
-        stylelint \
-        eslint-plugin-react \
-        eslint-plugin-react-hooks \
-        eslint-plugin-import \
-        eslint-config-next
-
-    printf "\n${ansi_bold}INSTALL NPM PACKAGES${ansi_reset}\n"
-
-    set --
-    if [ -n "$is_local_install" ]
-    then
-        set -- "$@" "$lint_dir"
-    else
-        set -- "$@" "$( get_verkstedt_lint_pkg "$lint_dir" )"
-    fi
-
+    # Gather packages we want to install
     set -- \
-        "$@" \
         "$( get_dev_dep_pkg "$lint_dir" eslint )" \
         "$( get_dev_dep_pkg "$lint_dir" prettier )"
     if [ -n "$uses_typescript" ]
@@ -384,6 +376,24 @@ main ()
             "$@" \
             "$( get_dev_dep_pkg "$lint_dir" jiti )" \
             "$( get_dev_dep_pkg "$lint_dir" typescript-eslint )"
+    fi
+
+    printf "\n${ansi_bold}REMOVE CONFLICTING NPM PACKAGES${ansi_reset}\n"
+    pkg_uninstall \
+        eslint-plugin-jsx-a11y \
+        stylelint \
+        eslint-plugin-react \
+        eslint-plugin-react-hooks \
+        eslint-plugin-import \
+        eslint-config-next \
+        "$@"
+
+    printf "\n${ansi_bold}INSTALL NPM PACKAGES${ansi_reset}\n"
+    if [ -n "$is_local_install" ]
+    then
+        set -- "$lint_dir" "$@"
+    else
+        set -- "$( get_verkstedt_lint_pkg "$lint_dir" )" "$@"
     fi
     pkg_install_dev "$@"
 
