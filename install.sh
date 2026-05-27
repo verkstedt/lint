@@ -53,7 +53,7 @@ pkg_uninstall ()
     then
         (
             set -x
-            yarn uninstall "$@"
+            yarn remove "$@"
         )
     else
         (
