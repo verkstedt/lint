@@ -1,0 +1,13 @@
+{
+  "name": "test-003-react",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test:unit:test": "eslint --max-warnings=0 ."
+  },
+  "devDependencies": {
+    "@verkstedt/lint": "../../",
+    "eslint": "^10.2.1",
+    "react": "^19.2.5"
+  }
+}

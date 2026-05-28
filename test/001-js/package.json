@@ -1,0 +1,12 @@
+{
+  "name": "test-001-js",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test:unit:test": "eslint --max-warnings=0 ."
+  },
+  "devDependencies": {
+    "@verkstedt/lint": "../../",
+    "eslint": "^10.2.1"
+  }
+}

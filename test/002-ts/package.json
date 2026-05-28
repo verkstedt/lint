@@ -1,0 +1,13 @@
+{
+  "name": "test-002-ts",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test:unit:test": "eslint --max-warnings=0 . && tsc --noEmit"
+  },
+  "devDependencies": {
+    "@verkstedt/lint": "../../",
+    "eslint": "^10.2.1",
+    "typescript": "^6.0.3"
+  }
+}

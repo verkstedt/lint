@@ -10,40 +10,66 @@ name: 'CI'
 #
 # IF YOU MODIFY IT IN ANY WAY, DESCRIBE IT IN THE COMMENT HERE
 # to make updating in the future easier.
+#
+# - lint-pkg and lint-node
 
 on:
   push:
     branches:
       - main
   pull_request:
-    branches:
-      - main
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
   ci:
     name: 'CI'
     uses: verkstedt/actions/.github/workflows/ci.yaml@v1
+    secrets: inherit
     with:
       working-directory: .
 
-  lint-deps:
-    name: 'Lint dependencies'
+  lint-pkg:
+    name: 'Lint package.json'
     runs-on: ubuntu-latest
     needs:
       - ci
     steps:
       - name: Setup
         uses: verkstedt/actions/setup@v1
+        with:
+          working-directory: .
+      - name: Lint package.json
+        working-directory: .
+        run: npm run lint:pkg
+
+  lint-node:
+    name: 'Lint Node.js versions'
+    runs-on: ubuntu-latest
+    needs:
+      - ci
+    steps:
+      - name: Setup
+        uses: verkstedt/actions/setup@v1
+        with:
+          working-directory: .
+      - name: Lint Node.js versions
+        working-directory: .
+        run: npm run lint:node
 
   notify-main-branch-failure:
     name: Notify about failure on main branch
     needs:
       - ci
-      - lint-deps
-    if: failure() && github.ref == 'refs/heads/main'
+      - lint-pkg
+      - lint-node
+    if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: verkstedt/actions/.github/workflows/notify-main-branch-failure.yaml@v1
     secrets: inherit

@@ -1,0 +1,14 @@
+{
+  "name": "test-004-next.js",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test:unit:test": "eslint --max-warnings=0 ."
+  },
+  "devDependencies": {
+    "@verkstedt/lint": "../../",
+    "eslint": "^10.2.1",
+    "next": "^16.2.4",
+    "react": "^19.2.5"
+  }
+}

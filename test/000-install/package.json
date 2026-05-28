@@ -1,0 +1,7 @@
+{
+  "name": "000-install",
+  "version": "1.0.0",
+  "scripts": {
+    "test:unit:test": "./test.sh"
+  }
+}

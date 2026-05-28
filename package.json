@@ -1,68 +1,171 @@
 {
-  "name": "@verkstedt/eslint-config-verkstedt",
-  "version": "10.0.2",
-  "description": "ESLint config",
-  "license": "MIT",
-  "main": "index.js",
-  "scripts": {
-    "test": "npm-run-all 'test:*'",
-    "test:unit": "node --test ./test.mjs",
-    "lint": "npm-run-all 'lint:*'",
-    "lint:js": "eslint .",
-    "lint:deps": "node ./validate-deps.js"
-  },
+  "name": "@verkstedt/lint",
+  "version": "11.0.0-rc.10",
+  "description": "Linting configuration for verkstedt projects",
+  "keywords": [
+    "lint",
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "stylelint",
+    "prettier"
+  ],
+  "author": "verkstedt GmbH <info@verkstedt.com>",
+  "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/verkstedt/eslint-config-verkstedt.git"
+    "url": "git+https://github.com/verkstedt/lint.git"
   },
-  "keywords": [
-    "eslint",
-    "eslint-config",
-    "eslint-plugin",
-    "eslintplugin",
-    "lint",
-    "next-js",
-    "prettier",
-    "stylelint",
-    "typescript"
-  ],
+  "homepage": "https://www.npmjs.com/package/@verkstedt/lint",
   "bugs": {
-    "url": "https://github.com/verkstedt/eslint-config-verkstedt/issues"
+    "url": "https://verkstedt.atlassian.net/jira/software/projects/VIP/boards/12"
   },
-  "homepage": "https://github.com/verkstedt/eslint-config-verkstedt#readme",
-  "dependencies": {
-    "@next/eslint-plugin-next": "^16.1.6",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-import": "^2.29.1",
-    "eslint-plugin-jsx-a11y": "^6.8.0",
-    "eslint-plugin-prefer-optional-chaining": "^0.0.1",
-    "eslint-plugin-prettier": "^5.1.3",
-    "eslint-plugin-react": "^7.34.1",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "stylelint-config-standard": "^36.0.0",
-    "stylelint-order": "^8.1.1",
-    "stylelint-scss": "^6.2.1"
+  "bin": {
+    "verkstedt-lint-setup": "install.sh"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24.12.0"
+  },
+  "files": [
+    "esm/",
+    "typescript/",
+    "install.sh",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    "./tsconfig": "./typescript/tsconfig.base.json",
+    "./eslint": {
+      "import": {
+        "types": "./esm/eslint/index.d.ts",
+        "default": "./esm/eslint/index.js"
+      }
+    },
+    "./prettier": {
+      "import": {
+        "types": "./esm/prettier/index.d.ts",
+        "default": "./esm/prettier/index.js"
+      }
+    }
+  },
+  "workspaces": [
+    ".",
+    "test/000-install",
+    "test/001-js",
+    "test/002-ts",
+    "test/003-react",
+    "test/004-next.js",
+    "test/005-css-modules"
+  ],
+  "scripts": {
+    "prepublishOnly": "npm run --silent holistic-check",
+    "prepare": "npm run build",
+    "lint": "npm-run-all --print-name --print-label 'lint:*'",
+    "lint:js": "eslint .",
+    "lint:ts": "tsc --noEmit",
+    "lint:pkg": "./scripts/lint-package-json.ts",
+    "lint:node": "./scripts/lint-node.ts",
+    "test": "npm-run-all --print-name --print-label 'test:*'",
+    "test:eslint-prettier": "eslint-config-prettier eslint.config.ts",
+    "pretest:unit": "npm run build",
+    "test:unit": "npm run --workspaces --if-present 'test:unit:test'",
+    "build": "npm-run-all --print-name --print-label 'build:*'",
+    "build:ts": "tsc",
+    "build:copy": "mkdir -p esm/ && cp -r prettier/.prettierignore esm/prettier/",
+    "holistic-check": "npm-run-all --print-name --print-label 'lint:!(ts)' build 'test:*'"
   },
   "peerDependencies": {
-    "eslint": "^8.52.0",
-    "eslint-plugin-prettier": "^5.1.3",
-    "prettier": "^3.2.5",
-    "stylelint": "^16.3.0"
+    "@eslint-react/eslint-plugin": ">=5.7.1",
+    "@next/eslint-plugin-next": ">=16.2.4",
+    "eslint": ">=10.2.1",
+    "eslint-import-resolver-typescript": ">=4.4.4",
+    "eslint-plugin-lingui": ">=0.13.1",
+    "eslint-plugin-react-hooks": ">=7.1.1",
+    "eslint-plugin-storybook": ">=10.3.5",
+    "jiti": ">=2.6.1",
+    "prettier": ">=3.8.3",
+    "typescript": "^6.0.3 <6.1.0",
+    "typescript-eslint": ">=8.59.1"
+  },
+  "peerDependenciesMeta": {
+    "eslint": {
+      "optional": false
+    },
+    "@next/eslint-plugin-next": {
+      "optional": true,
+      "note": "Required if you are using Next.js."
+    },
+    "eslint-import-resolver-typescript": {
+      "optional": true,
+      "note": "Required if you are using TypeScript."
+    },
+    "eslint-plugin-lingui": {
+      "optional": true,
+      "note": "Required if you are using LinguiJS."
+    },
+    "@eslint-react/eslint-plugin": {
+      "optional": true,
+      "note": "Required if you are using React."
+    },
+    "eslint-plugin-react-hooks": {
+      "optional": true,
+      "note": "Required if you are using React."
+    },
+    "eslint-plugin-storybook": {
+      "optional": true,
+      "note": "Required if you are using Storybook."
+    },
+    "jiti": {
+      "optional": true,
+      "note": "Required if you are using TypeScript (for evaluating eslint.config.ts)."
+    },
+    "prettier": {
+      "optional": true,
+      "note": "We use prettier rules as part of EsLint, but it can also be ran separately."
+    },
+    "typescript": {
+      "optional": true,
+      "note": "Required if you are using TypeScript."
+    },
+    "typescript-eslint": {
+      "optional": true,
+      "note": "Required if you are using TypeScript."
+    }
   },
   "devDependencies": {
-    "@babel/core": "^7.24.3",
-    "@babel/eslint-parser": "^7.24.1",
-    "@typescript-eslint/eslint-plugin": "^7.3.1",
-    "@typescript-eslint/parser": "^7.3.1",
-    "eslint": "^8.52.0",
+    "@eslint-react/eslint-plugin": "^5.7.1",
+    "@eslint/core": "^1.2.1",
+    "@next/eslint-plugin-next": "^16.2.4",
+    "@types/node": "^24 <=24.12.0",
+    "eslint": "^10.2.1",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-lingui": "^0.13.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-storybook": "^10.3.5",
+    "jiti": "^2.6.1",
     "npm-run-all": "^4.1.5",
-    "postcss-scss": "^4.0.9",
-    "prettier": "^3.2.5",
-    "stylelint": "^16.3.0",
-    "typescript": "^5.4.3"
+    "prettier": "^3.8.3",
+    "typescript-eslint": "^8.59.1"
+  },
+  "dependencies": {
+    "@bhollis/eslint-plugin-css-modules": "^1.0.1",
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.7.1",
+    "@eslint/compat": "^2.0.5",
+    "@eslint/css": "^1.1.0",
+    "@eslint/js": "^10.0.1",
+    "@eslint/json": "^1.2.0",
+    "@eslint/markdown": "^8.0.1",
+    "deepmerge": "^4.3.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import-x": "^4.16.2",
+    "eslint-plugin-n": "^17.24.0",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^17.5.0",
+    "typescript": "^6.0.3 <6.1.0"
   },
   "config": {
-    "setup-repo-version": "1.1.6+git.205753b"
+    "setup-repo-version": "1.1.5+git.48e2424",
+    "setup-repo-is-frontend": "No"
   }
 }
