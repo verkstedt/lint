@@ -14,7 +14,11 @@ export const CSS_FILES = [`**/*.css`];
 const JSON_EXTS = ['json', 'jsonc'];
 export const JSON_FILES = [`**/*.{${JSON_EXTS.join(',')}}`];
 
-export const MS_JSONC_FILES = ['tsconfig.json', '.vscode/**/*.json'];
+export const MS_JSONC_FILES = [
+  'tsconfig.json',
+  'wrangler.jsonc',
+  '.vscode/**/*.json',
+];
 export const JSONC_FILES = ['**/*.jsonc', ...MS_JSONC_FILES];
 
 const MARKDOWN_EXTS = ['md', 'markdown'];
