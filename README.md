@@ -4,7 +4,7 @@ Linting configuration for verkstedt projects
 
 ## Links
 
-- [🔍 Packages using this](https://github.com/search?q=path:**/package.json+%22@verkstedt/lint%22+NOT+is:archived)
+- [🔍 Packages using this](https://github.com/search?q=path:**/package.json+%22@verkstedt/lint%22+NOT+repo:verkstedt/lint+NOT+is:archived)
 
 <details>
 <summary>verkstedt internal</summary>
