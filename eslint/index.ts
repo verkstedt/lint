@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { debuglog, inspect } from 'node:util';
 
 import cssModulesPlugin from '@bhollis/eslint-plugin-css-modules';
-import { includeIgnoreFile as includeIgnoreFileOriginal } from '@eslint/compat';
+import { includeIgnoreFile as includeIgnoreFileOriginal } from '@eslint/config-helpers';
 import type { Plugin } from '@eslint/core';
 import css from '@eslint/css';
 import js from '@eslint/js';
