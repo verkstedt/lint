@@ -650,6 +650,11 @@ async function createVerkstedtConfig({
           files: CSS_FILES,
           plugins: { css },
           language: 'css/css',
+          languageOptions: {
+            // Allows syntax errors that browser can recover from.
+            // This is to enable syntax not yet recognised by the parser.
+            tolerant: true,
+          },
           extends: ['css/recommended'],
         };
       },
