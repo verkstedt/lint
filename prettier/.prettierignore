@@ -18,6 +18,8 @@ next-env.d.ts
 # BMAD method
 /_bmad/
 /_bmad-output/
+/.agents/skills/bmad*/
+/.claude/skills/bmad*/
 /.claude/commands/bmad-*.md
 /.cursor/commands/bmad-*.md
 /.codex/prompts/bmad-*.md
