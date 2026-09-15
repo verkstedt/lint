@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { debuglog, inspect } from 'node:util';
 
 import cssModulesPlugin from '@bhollis/eslint-plugin-css-modules';
+import e18e from '@e18e/eslint-plugin';
 import { includeIgnoreFile as includeIgnoreFileOriginal } from '@eslint/config-helpers';
 import type { Plugin } from '@eslint/core';
 import css from '@eslint/css';
@@ -630,6 +631,21 @@ async function createVerkstedtConfig({
           },
           extends: ['json/recommended'],
         };
+      },
+    },
+    {
+      name: 'e18e',
+      get() {
+        // source: https://github.com/e18e/eslint-plugin
+        return [
+          e18e.configs.recommended,
+          // Downgraded to warning to ease the migration, since no autofix available
+          {
+            rules: {
+              'e18e/prefer-static-regex': 'warn',
+            },
+          },
+        ];
       },
     },
     {
