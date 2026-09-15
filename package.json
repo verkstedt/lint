@@ -70,10 +70,11 @@
     "test:eslint-prettier": "eslint-config-prettier eslint.config.ts",
     "pretest:unit": "npm run build",
     "test:unit": "npm run --workspaces --if-present 'test:unit:test'",
+    "test-consumers": "./scripts/test-consumers.sh",
     "build": "npm-run-all --print-name --print-label 'build:*'",
     "build:ts": "tsc",
     "build:copy": "mkdir -p esm/ && cp -r prettier/.prettierignore esm/prettier/",
-    "holistic-check": "npm-run-all --print-name --print-label 'lint:!(ts)' build 'test:*'"
+    "holistic-check": "npm-run-all --print-name --print-label 'lint:!(ts)' build 'test:*' test-consumers"
   },
   "peerDependencies": {
     "@eslint-react/eslint-plugin": ">=5.7.1",
