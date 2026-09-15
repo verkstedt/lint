@@ -149,6 +149,11 @@ packages.
 
 [npm workspaces]: https://docs.npmjs.com/cli/v8/using-npm/workspaces
 
+To check how the current config behaves in real projects, run
+`npm run test-consumers`. It clones every repository in the verkstedt
+GitHub organisation that depends on `@verkstedt/lint`, installs this
+working copy into each of them and runs `eslint`.
+
 ## Debugging
 
 Run with `NODE_DEBUG=@verkstedt/lint` to see some debug logs.
