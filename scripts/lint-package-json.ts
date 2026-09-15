@@ -24,6 +24,8 @@ interface PackageJson {
 
 const options: ParseArgsOptionsWithDescription = {};
 
+const BOUNDED_PEER_VERSION_REGEX = /^\^.+ <.+/;
+
 async function readPackageJson() {
   const packageJsonPath = new URL(
     'package.json',
@@ -68,7 +70,7 @@ function checkPeerSpec(
   prodDeps: Record<string, string>,
 ): Array<string> {
   const errors: Array<string> = [];
-  const isBoundedPeer = /^\^.+ <.+/.test(peerVersion);
+  const isBoundedPeer = BOUNDED_PEER_VERSION_REGEX.test(peerVersion);
   if (!peerVersion.startsWith('>=') && !isBoundedPeer) {
     errors.push(
       `Peer dependency "${dep}" should use '>=' or '^X <Y' version specifier, found "${peerVersion}".`,
