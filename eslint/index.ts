@@ -161,6 +161,10 @@ function readTsConfig(tsconfigPath: string | null) {
   return tsconfig;
 }
 
+const MISSING_MODULE_MESSAGE_REGEX =
+  /^Cannot find (?:module|package) '(@[^/']+\/[^/']+|[^/']+)(?:|\/[^']+)'/;
+const REACT_HOOKS_RULE_PREFIX_REGEX = /^react-hooks\//;
+
 function getMissingDepNameFromError(error: unknown) {
   if (
     error instanceof Error &&
@@ -168,10 +172,7 @@ function getMissingDepNameFromError(error: unknown) {
     typeof error.code === 'string' &&
     ['MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND'].includes(error.code)
   ) {
-    const match =
-      /^Cannot find (?:module|package) '(@[^/']+\/[^/']+|[^/']+)(?:|\/[^']+)'/.exec(
-        error.message,
-      );
+    const match = MISSING_MODULE_MESSAGE_REGEX.exec(error.message);
     if (match) {
       return match[1];
     } else {
@@ -198,7 +199,7 @@ async function detectProjectFlags(
 
   const usesTypeScript =
     depsSet.intersection(new Set(['typescript', 'ts-node', 'jiti'])).size > 0 ||
-    deps.some((dep) => /^@types\/.*$/.test(dep)) ||
+    deps.some((dep) => dep.startsWith('@types/')) ||
     (tsconfigPath != null && (await fileExists(tsconfigPath)));
   const usesNextJs = depsSet.has('next');
   const usesReact =
@@ -279,12 +280,12 @@ async function createVerkstedtConfig({
   const packageJson = JSON.parse(
     await fs.readFile(packageJsonPath, 'utf-8'),
   ) as PackageJson;
-  const deps = Array.from(
-    new Set([
+  const deps = [
+    ...new Set([
       ...Object.keys(packageJson.dependencies ?? {}),
       ...Object.keys(packageJson.devDependencies ?? {}),
     ]),
-  );
+  ];
 
   const tsconfigPath = await getTsConfigPath(dir);
   const { usesTypeScript, usesReact, usesNextJs, usesStoryBook, isFrontend } =
@@ -490,7 +491,7 @@ async function createVerkstedtConfig({
                 react.configs['disable-conflict-eslint-plugin-react-hooks']
                   .rules ?? {},
               ).map((rule) => [
-                rule.replace(/^react-hooks\//, '@eslint-react/'),
+                rule.replace(REACT_HOOKS_RULE_PREFIX_REGEX, '@eslint-react/'),
                 'off',
               ]),
             );
