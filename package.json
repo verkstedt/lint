@@ -85,7 +85,7 @@
     "eslint-plugin-storybook": ">=10.3.5",
     "jiti": ">=2.6.1",
     "prettier": ">=3.8.3",
-    "typescript": "^6.0.3 <6.1.0",
+    "typescript": ">=6.0.3",
     "typescript-eslint": ">=8.59.1"
   },
   "peerDependenciesMeta": {
@@ -146,6 +146,7 @@
     "jiti": "^2.6.1",
     "npm-run-all": "^4.1.5",
     "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.1"
   },
   "dependencies": {
@@ -162,8 +163,7 @@
     "eslint-plugin-n": "^17.24.0",
     "eslint-plugin-prettier": "^5.5.5",
     "get-tsconfig": "^4.14.3",
-    "globals": "^17.5.0",
-    "typescript": "^6.0.3 <6.1.0"
+    "globals": "^17.5.0"
   },
   "config": {
     "setup-repo-version": "1.1.5+git.48e2424",

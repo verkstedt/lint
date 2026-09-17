@@ -167,12 +167,6 @@ Run with `NODE_DEBUG=@verkstedt/lint` to see some debug logs.
   [`./typescript/tsconfig.base.json`](./typescript/tsconfig.base.json)
   to your `tsconfig` and keep your `extends` as it is.
 
-- TypeScript is pinned to `^6.0.3 <6.1.0` (in both `peerDependencies`
-  and `devDependencies`). This may look surprising, but `typescript-eslint`
-  caps its `typescript` peer at `<6.1.0`, so we mirror that range here to
-  keep `npm install` resolving cleanly. Once a `typescript-eslint` release
-  widens the cap, we can match it.
-
 ## License
 
 [ISC](./LICENSE)
