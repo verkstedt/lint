@@ -33,13 +33,22 @@ async function readPackageJson() {
   return JSON.parse(packageJsonContent) as PackageJson;
 }
 
+/**
+ * Strips the alias prefix from specs like `npm:@scope/name@^1.2.3`,
+ * leaving just the version range.
+ */
+function stripAlias(version: string): string {
+  return version.replace(/^npm:.+@(?=[^@]+$)/, '');
+}
+
 function checkInstalledMatchesPeer(
   dep: string,
   depType: string,
-  version: string,
+  rawVersion: string,
   peerVersion: string,
   isBoundedPeer: boolean,
 ): Array<string> {
+  const version = stripAlias(rawVersion);
   if (isBoundedPeer) {
     if (version !== peerVersion) {
       return [

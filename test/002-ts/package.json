@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test:unit:test": "eslint --max-warnings=0 . && tsc --noEmit"
+    "test:unit:test": "set -x && eslint --max-warnings=0 . && tsc --version | grep -q 'Version 7' && tsc --noEmit"
   },
   "devDependencies": {
+    "@typescript/native": "npm:typescript@^7.0.2",
     "@verkstedt/lint": "../../",
     "eslint": "^10.2.1",
-    "typescript": "^6.0.3"
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
   }
 }
