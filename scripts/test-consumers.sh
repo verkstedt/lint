@@ -1,10 +1,6 @@
 #!/usr/bin/env sh
 # Runs the ESLint config from this working copy against every repository
 # in the verkstedt GitHub organisation that depends on @verkstedt/lint.
-#
-# Requires `gh` to be authenticated. Clones live in
-# $TMPDIR/verkstedt-lint-consumers/ and are reused on subsequent runs.
-# ESLint output is kept in logs/ next to them.
 set -eu
 # Otherwise `cd` echoes the directory when CDPATH is set
 unset CDPATH
@@ -131,11 +127,12 @@ fi
 printf 'Looking up repositories in %s that use @verkstedt/lint... ' "$org"
 # Maximum `gh search code` allows
 search_limit=1000
+# lines: `org/name path_to_package_json`
 search_results="$(
   gh search code "\"@verkstedt/lint\"" \
     --owner "$org" --filename package.json --limit "$search_limit" \
-    --json repository \
-    --jq '.[].repository.nameWithOwner'
+    --json repository,path \
+    --jq '.[] | "\(.repository.nameWithOwner) \(.path)"'
 )" || {
   printf '%s%s FAILED%s\n' "$red" "$fail_icon" "$reset"
   exit 69 # EX_UNAVAILABLE
@@ -145,28 +142,36 @@ then
   printf 'found %s or more, some may have been omitted\n' "$search_limit" >&2
   exit 70 # EX_SOFTWARE
 fi
-repos="$(
+packages="$(
   printf '%s\n' "$search_results" |
-    grep -v "^$org/lint$" |
+    grep -v "^verkstedt/lint " |
     sort -u
 )"
-if [ -z "$repos" ]
+if [ -z "$packages" ]
 then
   printf 'found none\n' >&2
   exit 69 # EX_UNAVAILABLE
 fi
-total="$( printf '%s\n' "$repos" | wc -l )"
+total="$( printf '%s\n' "$packages" | wc -l )"
 if [ -n "$repo_regexp" ]
 then
   printf 'found %s, filtering... ' "$total"
-  # grep exits with 1 when nothing matches, which is not an error here
-  repos="$( printf '%s\n' "$repos" | grep -E -- "$repo_regexp" || [ $? -eq 1 ] )"
-  if [ -z "$repos" ]
+  packages="$(
+    printf '%s\n' "$packages" |
+      while read -r repo pkg_json
+      do
+        if printf '%s\n' "$repo" | grep -E -- "$repo_regexp" >/dev/null
+        then
+          printf '%s %s\n' "$repo" "$pkg_json"
+        fi
+      done
+  )"
+  if [ -z "$packages" ]
   then
     printf 'none matched\n' >&2
     exit 1
   fi
-  total="$( printf '%s\n' "$repos" | wc -l )"
+  total="$( printf '%s\n' "$packages" | wc -l )"
 fi
 printf 'found %s\n' "$total"
 
@@ -184,7 +189,6 @@ then
     printf '%s%s FAILED%s, see %s\n' "$red" "$fail_icon" "$reset" "$pack_log"
     exit 70 # EX_SOFTWARE
   }
-  # `npm pack` runs the build first, so only the last line is the file name
   tarball="$work_dir/$( printf '%s\n' "$pack_output" | tail -n 1 )"
   printf 'wrote %s\n' "$tarball"
   # The tarball path is the same on every run, so Yarn’s cache must not
@@ -195,21 +199,39 @@ fi
 
 failed=""
 i=0
-for repo in $repos
+prev_repo=""
+while read -r repo pkg_json
 do
   name="${repo#*/}"
   dir="$work_dir/$name"
-  log="$work_dir/$name.log"
+  # Track if we are processing last entry for a repo to know if we can
+  # remove temporary clone
+  if [ "$repo" != "$prev_repo" ]
+  then
+    repo_packages_count="$( printf '%s\n' "$packages" | grep -c "^$repo " )"
+    repo_done_count=0
+  fi
+  repo_done_count=$((repo_done_count + 1))
+  prev_repo="$repo"
+  pkg_dir="$( dirname "$pkg_json" )"
+  pkg_root="$dir/$pkg_dir"
+  slug="$name/$pkg_json"
+  log="$work_dir/$( printf '%s' "$slug" | tr / _ ).log"
   : > "$log"
 
   i=$((i + 1))
-  printf '\n%s=== %s/%s: %s%s\n' "$bold" "$i" "$total" "$repo" "$reset"
+  printf '\n%s=== %s/%s: %s/%s%s\n' "$bold" "$i" "$total" "$repo" "$pkg_json" "$reset"
 
-  if [ -d "$dir/.git" ]
+  if [ "$repo_done_count" -gt 1 ]
+  then
+    printf 'Reusing <%s>... ' "$dir"
+    (
+      set -x
+      git -C "$dir" reset --quiet --hard
+    ) >> "$log" 2>&1
+  elif [ -d "$dir/.git" ]
   then
     printf 'Updating <%s>... ' "$dir"
-    # Discard whatever previous run left behind (e.g. lockfile changes)
-    # `set -e` is ignored in a subshell followed by `||`, hence `&&`
     (
       set -x
       git -C "$dir" fetch --quiet --depth 1 &&
@@ -225,33 +247,44 @@ do
     ) >> "$log" 2>&1
   fi || {
     printf '%s%s FAILED%s, see %s\n' "$red" "$fail_icon" "$reset" "$log"
-    failed="$failed $name"
+    failed="$failed $slug"
     continue
   }
   printf 'done\n'
 
   printf 'Detecting package manager... '
   pkg_mgr=""
-  if [ -f "$dir/pnpm-lock.yaml" ]
-  then
-    pkg_mgr=pnpm
-  elif [ -f "$dir/package-lock.json" ]
-  then
-    pkg_mgr=npm
-  elif [ -f "$dir/yarn.lock" ]
-  then
-    # Yarn switches to the version a repository pins, so ask inside of it
-    case "$( cd "$dir" && yarn --version 2>/dev/null )" in
-      1.*)
-        pkg_mgr=yarn-classic
-        ;;
-      # We do not support yarn-berry currently. Ideally we’d drop support for yarn completely
-    esac
-  fi
+  # In a monorepo the lockfile lives in the repository root, so packages are
+  # installed there while @verkstedt/lint and ESLint run in the package
+  install_root=""
+  for candidate in "$pkg_root" "$dir"
+  do
+    if [ -f "$candidate/pnpm-lock.yaml" ]
+    then
+      pkg_mgr=pnpm
+    elif [ -f "$candidate/package-lock.json" ]
+    then
+      pkg_mgr=npm
+    elif [ -f "$candidate/yarn.lock" ]
+    then
+      # Yarn switches to the version a repository pins, so ask inside of it
+      case "$( cd "$candidate" && yarn --version 2>/dev/null )" in
+        1.*)
+          pkg_mgr=yarn-classic
+          ;;
+        # We do not support yarn-berry currently. Ideally we’d drop support for yarn completely
+      esac
+    fi
+    if [ -n "$pkg_mgr" ]
+    then
+      install_root="$candidate"
+      break
+    fi
+  done
   if [ -z "$pkg_mgr" ]
   then
     printf '%s%s FAILED%s\n' "$red" "$fail_icon" "$reset"
-    failed="$failed $name"
+    failed="$failed $slug"
     continue
   fi
   printf '%s\n' "$pkg_mgr"
@@ -270,10 +303,10 @@ do
   esac
   (
     set -x
-    cd "$dir" && "$@"
+    cd "$install_root" && "$@"
   ) >> "$log" 2>&1 || {
     printf '%s%s FAILED%s, see %s\n' "$red" "$fail_icon" "$reset" "$log"
-    failed="$failed $name"
+    failed="$failed $slug"
     continue
   }
   printf 'done\n'
@@ -281,13 +314,11 @@ do
   if [ -n "$tarball" ]
   then
     printf 'Installing @verkstedt/lint from this working copy... '
-      # Modifies package.json and the lockfile, which is discarded above
       case "$pkg_mgr" in
         npm)
           set -- npm install --no-save --ignore-scripts --no-audit --no-fund
           ;;
         pnpm)
-          # pnpm refuses to add to a workspace root without the flag
           set -- pnpm add --save-dev --ignore-scripts --ignore-workspace-root-check
           ;;
         yarn-classic)
@@ -297,10 +328,10 @@ do
       esac
     (
       set -x
-      cd "$dir" && "$@" "$tarball"
+      cd "$pkg_root" && "$@" "$tarball"
     ) >> "$log" 2>&1 || {
       printf '%s%s FAILED%s, see %s\n' "$red" "$fail_icon" "$reset" "$log"
-      failed="$failed $name"
+      failed="$failed $slug"
       continue
     }
     printf 'done\n'
@@ -308,7 +339,6 @@ do
 
   printf 'Running EsLint... '
   if (
-    # Run through the package manager so its dependency resolution is used
     case "$pkg_mgr" in
       npm)
         set -- npm exec -- eslint
@@ -324,15 +354,22 @@ do
     then
       set -- "$@" --fix
     fi
-    cd "$dir"
+    cd "$pkg_root"
     set -x
     "$@" .
   ) >> "$log" 2>&1
   then
     printf '%s OK\n' "$ok_icon"
-    if [ "$keep_wins" -eq 0 ]
+    if [ "$keep_wins" -eq 0 ] && [ "$repo_done_count" -eq "$repo_packages_count" ]
     then
-      rm -rf "$dir"
+      # Keep the clone when another package of this repository had problems
+      case "$failed" in
+        *" $name/"*)
+          ;;
+        *)
+          rm -rf "$dir"
+          ;;
+      esac
     fi
   else
     printf '\n%s' "$red"
@@ -340,9 +377,12 @@ do
     grep -A1 '^✖' "$log" | grep -E "^✖|potentially fixable with the \`--fix\`" || tail -n3 "$log"
     printf '%s' "$reset"
     printf '%s%s FAILED%s, see %s\n' "$red" "$fail_icon" "$reset" "$log"
-    failed="$failed $name"
+    failed="$failed $slug"
   fi
-done
+# A here-document instead of a pipe, so that `failed` survives the loop
+done <<EOF
+$packages
+EOF
 
 printf '\n'
 if [ -n "$failed" ]
