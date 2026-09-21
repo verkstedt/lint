@@ -2,6 +2,7 @@
 # Runs the ESLint config from this working copy against every repository
 # in the verkstedt GitHub organisation that depends on @verkstedt/lint.
 set -eu
+
 # Otherwise `cd` echoes the directory when CDPATH is set
 unset CDPATH
 
@@ -9,6 +10,8 @@ org="verkstedt"
 root="$( cd "$(dirname "$0")/.." && pwd )"
 work_dir="${TMPDIR:-/tmp}/verkstedt-lint-consumers"
 op_plugin_sh="${XDG_CONFIG_HOME:-$HOME/.config}/op/plugins.sh"
+base_path="$PATH"
+node_manager=""
 
 if [ -t 1 ] && [ "${NO_COLOR-}" != "1" ]
 then
@@ -45,6 +48,37 @@ Options:
   -k, --keep-wins   Also keep clones of repositories without problems
   -h, --help        Show this help
 EOF
+}
+
+# Print the bin directory of the given Node version, installing the version
+# when necessary
+node_bin_dir ()
+{
+  case "$node_manager" in
+    nvs)
+      # nvs.sh is POSIX, but `nvs use` alters PATH, hence the subshell
+      (
+        node_version="$1"
+        # nvs.sh reads variables only bash and zsh set
+        set +u
+        # When sourced with positional parameters, nvs.sh runs `nvs` with them
+        set --
+        # shellcheck source=/dev/null
+        . "$NVS_HOME/nvs.sh" >/dev/null &&
+          nvs add "$node_version" >/dev/null &&
+          nvs use "$node_version" >/dev/null &&
+          dirname "$( command -v node )"
+      )
+      ;;
+    nvm)
+      # nvm.sh only works when sourced by bash or zsh
+      bash -c '
+        . "$NVM_DIR/nvm.sh" >/dev/null &&
+          nvm install "$1" >/dev/null 2>&1 &&
+          dirname "$( nvm which "$1" )"
+      ' _ "$1"
+      ;;
+  esac
 }
 
 baseline=0
@@ -123,6 +157,21 @@ then
     printf 'gh plugin not set up\n'
   fi
 fi
+
+printf 'Detecting Node.js version manager... '
+if [ -s "${NVS_HOME:-$HOME/.nvs}/nvs.sh" ]
+then
+  NVS_HOME="${NVS_HOME:-$HOME/.nvs}"
+  NVS_ROOT="$NVS_HOME"
+  export NVS_HOME NVS_ROOT
+  node_manager=nvs
+elif [ -s "${NVM_DIR:-$HOME/.nvm}/nvm.sh" ]
+then
+  NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+  export NVM_DIR
+  node_manager=nvm
+fi
+printf '%s\n' "${node_manager:-not found}"
 
 printf 'Looking up repositories in %s that use @verkstedt/lint... ' "$org"
 # Maximum `gh search code` allows
@@ -251,6 +300,33 @@ do
     continue
   }
   printf 'done\n'
+
+  PATH="$base_path"
+  if [ -n "$node_manager" ]
+  then
+    # .nvmrc of the package, or of the monorepo it is in
+    node_version=""
+    for candidate in "$pkg_root" "$dir"
+    do
+      if [ -f "$candidate/.nvmrc" ]
+      then
+        node_version="$( tr -d '[:space:]' < "$candidate/.nvmrc" )"
+        break
+      fi
+    done
+    if [ -n "$node_version" ]
+    then
+      printf 'Switching to Node %s (downloads it if needed)... ' "$node_version"
+      if ! node_bin="$( node_bin_dir "$node_version" 2>> "$log" )"
+      then
+        printf '%s%s FAILED%s, see %s\n' "$red" "$fail_icon" "$reset" "$log"
+        failed="$failed $slug"
+        continue
+      fi
+      PATH="$node_bin:$PATH"
+      printf 'node %s, npm %s\n' "$( node --version )" "$( npm --version )"
+    fi
+  fi
 
   printf 'Detecting package manager... '
   pkg_mgr=""
