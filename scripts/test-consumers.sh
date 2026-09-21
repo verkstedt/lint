@@ -12,6 +12,7 @@ unset CDPATH
 org="verkstedt"
 root="$( cd "$(dirname "$0")/.." && pwd )"
 work_dir="${TMPDIR:-/tmp}/verkstedt-lint-consumers"
+op_plugin_sh="${XDG_CONFIG_HOME:-$HOME/.config}/op/plugins.sh"
 
 if [ -t 1 ] && [ "${NO_COLOR-}" != "1" ]
 then
@@ -113,6 +114,19 @@ fi
 mkdir -p "$work_dir"
 # TMPDIR may be relative, but the path is used after `cd`
 work_dir="$( cd "$work_dir" && pwd )"
+
+if [ -r "$op_plugin_sh" ]
+then
+  printf 'Sourcing 1Password shell plugins... '
+  # shellcheck source=/dev/null
+  . "$op_plugin_sh" >/dev/null >/dev/null 2>&1
+  if type gh | grep -Eq 'gh is a (shell )?function'
+  then
+    printf 'gh plugin seems to be set up\n'
+  else
+    printf 'gh plugin not set up\n'
+  fi
+fi
 
 printf 'Looking up repositories in %s that use @verkstedt/lint... ' "$org"
 # Maximum `gh search code` allows
