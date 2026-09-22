@@ -132,6 +132,44 @@ npx @verkstedt/lint@latest .
 
 </details>
 
+### TypeScript 7
+
+This package does not use the TypeScript API itself and works with
+whichever `typescript` your project installs. `typescript-eslint`,
+however, still needs the TypeScript 6 API. To lint a TypeScript 7
+project, install both, using the aliases recommended by the TypeScript
+team:
+
+```sh
+npm install --save-dev typescript@npm:@typescript/typescript6 @typescript/native@npm:typescript@7
+```
+
+This gives you:
+
+- `tsc` from TypeScript 7 (via `@typescript/native`), used by your
+  build and type checks
+- `typescript` resolving to the TypeScript 6 API (via
+  `@typescript/typescript6`), used by `typescript-eslint` and editors
+- `tsc6` if you ever need the TypeScript 6 compiler explicitly
+
+Both TypeScript versions declare a `tsc` binary and npm links whichever
+it installs last. If `npx tsc --version` reports TypeScript 6 after
+adding the aliases, run a clean install (`npm ci`) to get TypeScript 7.
+
+Editors that load `node_modules/typescript` will find only the API
+re-export there, without the bundled `lib.*.d.ts` files. Point your
+editor’s TypeScript at `node_modules/@typescript/old` (TypeScript 6)
+or `node_modules/@typescript/native` (TypeScript 7) instead.
+
+> [!NOTE]
+> _TODO_ When [`typescript-eslint` version with TypeScript 7](https://github.com/typescript-eslint/typescript-eslint/pull/12803)
+> support ships, remove this section.
+>
+> <!--
+> Also update this repo’s devDependencies to use just "typescript" instead
+> of "@typescript/native" + "typescript": "npm:@typescript/typescript6…"
+> -->
+
 ### First run
 
 ```sh
@@ -166,12 +204,6 @@ Run with `NODE_DEBUG=@verkstedt/lint` to see some debug logs.
   If your project already extends something you should copy options from
   [`./typescript/tsconfig.base.json`](./typescript/tsconfig.base.json)
   to your `tsconfig` and keep your `extends` as it is.
-
-- TypeScript is pinned to `^6.0.3 <6.1.0` (in both `peerDependencies`
-  and `devDependencies`). This may look surprising, but `typescript-eslint`
-  caps its `typescript` peer at `<6.1.0`, so we mirror that range here to
-  keep `npm install` resolving cleanly. Once a `typescript-eslint` release
-  widens the cap, we can match it.
 
 ## License
 
