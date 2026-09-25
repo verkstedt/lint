@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { debuglog, inspect } from 'node:util';
 
 import cssModulesPlugin from '@bhollis/eslint-plugin-css-modules';
+import e18e from '@e18e/eslint-plugin';
 import { includeIgnoreFile as includeIgnoreFileOriginal } from '@eslint/config-helpers';
 import type { Plugin } from '@eslint/core';
 import css from '@eslint/css';
@@ -126,6 +127,10 @@ async function getTsConfigPath(dir: string): Promise<string | null> {
   }
 }
 
+const MISSING_MODULE_MESSAGE_REGEX =
+  /^Cannot find (?:module|package) '(@[^/']+\/[^/']+|[^/']+)(?:|\/[^']+)'/;
+const REACT_HOOKS_RULE_PREFIX_REGEX = /^react-hooks\//;
+
 function getMissingDepNameFromError(error: unknown) {
   if (
     error instanceof Error &&
@@ -133,10 +138,7 @@ function getMissingDepNameFromError(error: unknown) {
     typeof error.code === 'string' &&
     ['MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND'].includes(error.code)
   ) {
-    const match =
-      /^Cannot find (?:module|package) '(@[^/']+\/[^/']+|[^/']+)(?:|\/[^']+)'/.exec(
-        error.message,
-      );
+    const match = MISSING_MODULE_MESSAGE_REGEX.exec(error.message);
     if (match) {
       return match[1];
     } else {
@@ -163,7 +165,7 @@ async function detectProjectFlags(
 
   const usesTypeScript =
     depsSet.intersection(new Set(['typescript', 'ts-node', 'jiti'])).size > 0 ||
-    deps.some((dep) => /^@types\/.*$/.test(dep)) ||
+    deps.some((dep) => dep.startsWith('@types/')) ||
     (tsconfigPath != null && (await fileExists(tsconfigPath)));
   const usesNextJs = depsSet.has('next');
   const usesReact =
@@ -244,12 +246,12 @@ async function createVerkstedtConfig({
   const packageJson = JSON.parse(
     await fs.readFile(packageJsonPath, 'utf-8'),
   ) as PackageJson;
-  const deps = Array.from(
-    new Set([
+  const deps = [
+    ...new Set([
       ...Object.keys(packageJson.dependencies ?? {}),
       ...Object.keys(packageJson.devDependencies ?? {}),
     ]),
-  );
+  ];
 
   const tsconfigPath = await getTsConfigPath(dir);
   const { usesTypeScript, usesReact, usesNextJs, usesStoryBook, isFrontend } =
@@ -450,7 +452,7 @@ async function createVerkstedtConfig({
                 react.configs['disable-conflict-eslint-plugin-react-hooks']
                   .rules ?? {},
               ).map((rule) => [
-                rule.replace(/^react-hooks\//, '@eslint-react/'),
+                rule.replace(REACT_HOOKS_RULE_PREFIX_REGEX, '@eslint-react/'),
                 'off',
               ]),
             );
@@ -591,6 +593,21 @@ async function createVerkstedtConfig({
           },
           extends: ['json/recommended'],
         };
+      },
+    },
+    {
+      name: 'e18e',
+      get() {
+        // source: https://github.com/e18e/eslint-plugin
+        return [
+          e18e.configs.recommended,
+          // Downgraded to warning to ease the migration, since no autofix available
+          {
+            rules: {
+              'e18e/prefer-static-regex': 'warn',
+            },
+          },
+        ];
       },
     },
     {

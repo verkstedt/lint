@@ -24,6 +24,9 @@ interface PackageJson {
 
 const options: ParseArgsOptionsWithDescription = {};
 
+const BOUNDED_PEER_VERSION_REGEX = /^\^.+ <.+/;
+const ALIAS_PREFIX_REGEX = /^npm:.+@(?=[^@]+$)/;
+
 async function readPackageJson() {
   const packageJsonPath = new URL(
     'package.json',
@@ -38,7 +41,7 @@ async function readPackageJson() {
  * leaving just the version range.
  */
 function stripAlias(version: string): string {
-  return version.replace(/^npm:.+@(?=[^@]+$)/, '');
+  return version.replace(ALIAS_PREFIX_REGEX, '');
 }
 
 function checkInstalledMatchesPeer(
@@ -77,7 +80,7 @@ function checkPeerSpec(
   prodDeps: Record<string, string>,
 ): Array<string> {
   const errors: Array<string> = [];
-  const isBoundedPeer = /^\^.+ <.+/.test(peerVersion);
+  const isBoundedPeer = BOUNDED_PEER_VERSION_REGEX.test(peerVersion);
   if (!peerVersion.startsWith('>=') && !isBoundedPeer) {
     errors.push(
       `Peer dependency "${dep}" should use '>=' or '^X <Y' version specifier, found "${peerVersion}".`,

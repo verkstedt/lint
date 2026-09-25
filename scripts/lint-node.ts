@@ -22,6 +22,9 @@ interface PackageJson {
 
 const options: ParseArgsOptionsWithDescription = {};
 
+const EXACT_VERSION_REGEX = /^[0-9]+(?:\.[0-9]+){2}$/;
+const MIN_VERSION_REGEX = /^>=([0-9]+)((?:\.[0-9]+){2})$/;
+
 async function readFileRel(filePathRel: string): Promise<string> {
   const filePath = new URL(filePathRel, pathToFileURL(import.meta.dirname))
     .pathname;
@@ -41,7 +44,7 @@ function lintNodeVersions(nvmrc: string, packageJson: PackageJson): boolean {
 
   if (!nvmrcVersion) {
     errors.push('Missing .nvmrc file');
-  } else if (!/^[0-9]+(?:\.[0-9]+){2}$/.test(nvmrcVersion)) {
+  } else if (!EXACT_VERSION_REGEX.test(nvmrcVersion)) {
     errors.push(
       `.nvmrc file must contain a specific version (e.g. "16.14.0"), got "${nvmrcVersion}"`,
     );
@@ -58,7 +61,7 @@ function lintNodeVersions(nvmrc: string, packageJson: PackageJson): boolean {
   if (!pkgTypesVersion) {
     errors.push('Missing "@types/node" devDependency in package.json');
   } else if (pkgVersion) {
-    const pkgVersionMatch = /^>=([0-9]+)((?:\.[0-9]+){2})$/.exec(pkgVersion);
+    const pkgVersionMatch = MIN_VERSION_REGEX.exec(pkgVersion);
     if (!pkgVersionMatch) {
       errors.push(
         `Cannot parse major version from "engines.node" field: "${pkgVersion}"`,
