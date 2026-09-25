@@ -75,7 +75,7 @@
     "build": "npm-run-all --print-name --print-label 'build:*'",
     "build:ts": "tsc",
     "build:copy": "mkdir -p esm/ && cp -r prettier/.prettierignore esm/prettier/",
-    "holistic-check": "npm-run-all --print-name --print-label 'lint:!(ts)' build 'test:*' test-consumers"
+    "holistic-check": "npm-run-all --print-name --print-label 'lint:!(ts)' build 'test:*' 'test-consumers -- --fix'"
   },
   "peerDependencies": {
     "@eslint-react/eslint-plugin": ">=5.7.1",
