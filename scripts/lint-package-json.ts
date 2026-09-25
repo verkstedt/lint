@@ -25,6 +25,7 @@ interface PackageJson {
 const options: ParseArgsOptionsWithDescription = {};
 
 const BOUNDED_PEER_VERSION_REGEX = /^\^.+ <.+/;
+const ALIAS_PREFIX_REGEX = /^npm:.+@(?=[^@]+$)/;
 
 async function readPackageJson() {
   const packageJsonPath = new URL(
@@ -40,7 +41,7 @@ async function readPackageJson() {
  * leaving just the version range.
  */
 function stripAlias(version: string): string {
-  return version.replace(/^npm:.+@(?=[^@]+$)/, '');
+  return version.replace(ALIAS_PREFIX_REGEX, '');
 }
 
 function checkInstalledMatchesPeer(
