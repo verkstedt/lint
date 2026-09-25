@@ -191,9 +191,20 @@ then
   printf 'found %s or more, some may have been omitted\n' "$search_limit" >&2
   exit 70 # EX_SOFTWARE
 fi
+# `gh search code` does not tell whether a repository is archived.
+# Lines: `org/name ` to match the beginning of search result lines
+archived="$(
+  gh repo list "$org" --archived --limit "$search_limit" \
+    --json nameWithOwner \
+    --jq '.[] | "\(.nameWithOwner) "'
+)" || {
+  printf '%s%s FAILED%s\n' "$red" "$fail_icon" "$reset"
+  exit 69 # EX_UNAVAILABLE
+}
 packages="$(
   printf '%s\n' "$search_results" |
     grep -v "^verkstedt/lint " |
+    grep -vF -- "${archived:-verkstedt/lint }" |
     sort -u
 )"
 if [ -z "$packages" ]
