@@ -7,7 +7,7 @@ import { parseTsconfig } from 'get-tsconfig';
  */
 const IMPLICIT_EXCLUDES = ['node_modules', 'bower_components', 'jspm_packages'];
 
-const WILDCARD_RE = /[*?]/;
+const WILDCARD_REGEX = /[*?]/;
 
 /**
  * What TypeScript would make of a tsconfig: which files belong to the
@@ -34,7 +34,7 @@ function includePatternToGlob(pattern: string): string {
   const trimmed = pattern.replace(/[\\/]+$/, '');
   const lastSegment = trimmed.split(/[\\/]/).at(-1) ?? '';
   const hasExtension = /^[^.].*\./.test(lastSegment);
-  if (!WILDCARD_RE.test(lastSegment) && !hasExtension) {
+  if (!WILDCARD_REGEX.test(lastSegment) && !hasExtension) {
     return `${trimmed}/**/*`;
   }
   return trimmed;
