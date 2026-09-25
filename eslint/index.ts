@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import type { WriteStream } from 'node:tty';
 import { fileURLToPath } from 'node:url';
 import { debuglog, inspect } from 'node:util';
@@ -23,11 +23,6 @@ import {
 import nodePlugin from 'eslint-plugin-n';
 import prettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
-import {
-  parseJsonConfigFileContent,
-  readConfigFile,
-  sys as tsSys,
-} from 'typescript';
 
 import configPackageJson from '../package.json' with { type: 'json' };
 
@@ -43,6 +38,7 @@ import {
   MS_JSONC_FILES,
   VANILLA_JS_EXTS,
 } from './file-globs.ts';
+import readTsProject from './ts-project.ts';
 import type { NoRestrictedImportsConfig } from './types.ts';
 
 interface PackageJson {
@@ -129,36 +125,6 @@ async function getTsConfigPath(dir: string): Promise<string | null> {
   } else {
     return null;
   }
-}
-
-function readTsConfig(tsconfigPath: string | null) {
-  if (!tsconfigPath) {
-    throw new Error('Failed to find tsconfig.json');
-  }
-
-  const tsconfigResult = readConfigFile(
-    tsconfigPath,
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- this is fine
-    tsSys.readFile,
-  );
-  if (tsconfigResult.error) {
-    const cause = tsconfigResult.error;
-    const errorMessage =
-      typeof cause.messageText !== 'string' &&
-      'messageText' in cause.messageText
-        ? cause.messageText.messageText
-        : cause.messageText;
-    throw new Error(`Failed to read ${tsconfigPath}: ${errorMessage}`, {
-      cause,
-    });
-  }
-  const tsconfig = parseJsonConfigFileContent(
-    tsconfigResult.config,
-    tsSys,
-    dirname(tsconfigPath),
-  );
-
-  return tsconfig;
 }
 
 const MISSING_MODULE_MESSAGE_REGEX =
@@ -386,10 +352,7 @@ async function createVerkstedtConfig({
         if (!usesTypeScript) {
           return null;
         } else {
-          const tsconfig = readTsConfig(tsconfigPath);
-          const allowJs = !!(
-            tsconfig.options.allowJs ?? tsconfig.options.checkJs
-          );
+          const tsProject = readTsProject(tsconfigPath);
 
           /*
            * tsconfig usually doesn’t include config files, scripts and
@@ -414,25 +377,23 @@ async function createVerkstedtConfig({
                   ),
               ),
             )
-          )
-            // Note: tsconfig.fileNames are absolute paths
-            .filter((filename) => {
-              // Skip files included explicitly in tsconfig
-              if (tsconfig.fileNames.includes(resolve(dir, filename))) {
-                return false;
-              }
-              // Include vanilla JS files, only if allowJS is falsy
-              // (otherwise they can be pulled in to the project if they
-              // are imported in included files)
-              // Note: We could check if a file is included in the
-              // project or not, but for doing so, we’d have to create
-              // whole TS project, which is costly.
-              if (VANILLA_JS_EXTS.some((ext) => filename.endsWith(`.${ext}`))) {
-                return !allowJs;
-              }
-              // Fall back to not including to be on the safe side
+          ).filter((filename) => {
+            // Skip files included explicitly in tsconfig
+            if (tsProject.isFileIncluded(resolve(dir, filename))) {
               return false;
-            });
+            }
+            // Include vanilla JS files, only if allowJS is falsy
+            // (otherwise they can be pulled in to the project if they
+            // are imported in included files)
+            // Note: We could check if a file is included in the
+            // project or not, but for doing so, we’d have to create
+            // whole TS project, which is costly.
+            if (VANILLA_JS_EXTS.some((ext) => filename.endsWith(`.${ext}`))) {
+              return !tsProject.includesJs;
+            }
+            // Fall back to not including to be on the safe side
+            return false;
+          });
           debugLog(
             'Detected files to add to allowDefaultProject:',
             additionalAllowDefaultProject,

@@ -56,7 +56,8 @@
     "test/002-ts",
     "test/003-react",
     "test/004-next.js",
-    "test/005-css-modules"
+    "test/005-css-modules",
+    "test/006-ts6"
   ],
   "scripts": {
     "prepublishOnly": "npm run --silent holistic-check",
@@ -70,10 +71,11 @@
     "test:eslint-prettier": "eslint-config-prettier eslint.config.ts",
     "pretest:unit": "npm run build",
     "test:unit": "npm run --workspaces --if-present 'test:unit:test'",
+    "test-consumers": "./scripts/test-consumers.sh",
     "build": "npm-run-all --print-name --print-label 'build:*'",
     "build:ts": "tsc",
     "build:copy": "mkdir -p esm/ && cp -r prettier/.prettierignore esm/prettier/",
-    "holistic-check": "npm-run-all --print-name --print-label 'lint:!(ts)' build 'test:*'"
+    "holistic-check": "npm-run-all --print-name --print-label 'lint:!(ts)' build 'test:*' test-consumers"
   },
   "peerDependencies": {
     "@eslint-react/eslint-plugin": ">=5.7.1",
@@ -85,7 +87,7 @@
     "eslint-plugin-storybook": ">=10.3.5",
     "jiti": ">=2.6.1",
     "prettier": ">=3.8.3",
-    "typescript": "^6.0.3 <6.1.0",
+    "typescript": ">=6.0.2",
     "typescript-eslint": ">=8.59.1"
   },
   "peerDependenciesMeta": {
@@ -138,6 +140,7 @@
     "@eslint/core": "^1.2.1",
     "@next/eslint-plugin-next": "^16.2.4",
     "@types/node": "^24 <=24.12.0",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "eslint": "^10.2.1",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-lingui": "^0.14.0",
@@ -146,6 +149,7 @@
     "jiti": "^2.6.1",
     "npm-run-all2": "^8.0.4",
     "prettier": "^3.8.3",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "typescript-eslint": "^8.59.1"
   },
   "dependencies": {
@@ -162,8 +166,8 @@
     "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-n": "^17.24.0",
     "eslint-plugin-prettier": "^5.5.5",
-    "globals": "^17.5.0",
-    "typescript": "^6.0.3 <6.1.0"
+    "get-tsconfig": "^4.14.3",
+    "globals": "^17.5.0"
   },
   "config": {
     "setup-repo-version": "1.1.5+git.48e2424",
