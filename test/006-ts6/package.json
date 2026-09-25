@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test:unit:test": "set -x && eslint --max-warnings=0 . && tsc --version | grep -q 'Version 6' && tsc --noEmit"
+    "test:unit:test": "set -e\n# Use ts6 CLI, instead of repo’s ts7\nPATH=\"$(dirname \"$(node -p \"require.resolve('typescript/bin/tsc')\")\"):$PATH\"\nset -x\neslint --max-warnings=0 . && tsc --version | grep -q 'Version 6' && tsc --noEmit"
   },
   "devDependencies": {
     "@verkstedt/lint": "../../",
