@@ -156,7 +156,7 @@
     "@bhollis/eslint-plugin-css-modules": "^1.0.1",
     "@e18e/eslint-plugin": "^0.8.0",
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.1",
-    "@eslint/config-helpers": "^0.6.0",
+    "@eslint/config-helpers": "^0.7.0",
     "@eslint/css": "^1.1.0",
     "@eslint/js": "^10.0.1",
     "@eslint/json": "^1.2.0",
