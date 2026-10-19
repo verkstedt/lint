@@ -217,10 +217,16 @@ Run with `NODE_DEBUG=@verkstedt/lint` to see some debug logs.
   - pulled in by `@eslint/markdown` (tracked in [#753][katex-em])
     → `micromark-extension-math` (fix in [#14][katex-mem]),
     which requires `katex@^0.16`
+- [GHSA-vfj7-8cjw-p6xm] `braces`
+  - no update path exists, [disputed by the library author][braces-dispute]
+  - doesn’t affect us, as we only match patterns we write ourselves
+  - `npm audit fix --force` downgrades `eslint-plugin-lingui`
 
 [GHSA-238p-pmpm-9mq7]: https://github.com/advisories/GHSA-238p-pmpm-9mq7
 [katex-mem]: https://github.com/micromark/micromark-extension-math/pull/14
 [katex-em]: https://github.com/eslint/markdown/issues/753
+[GHSA-vfj7-8cjw-p6xm]: https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
+[braces-dispute]: https://github.com/github/advisory-database/pull/10132#issuecomment-6065200314
 
 ## License
 
