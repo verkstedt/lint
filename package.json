@@ -169,6 +169,9 @@
     "get-tsconfig": "^4.14.3",
     "globals": "^17.13.0"
   },
+  "overrides": {
+    "katex": "^0.19.0"
+  },
   "config": {
     "setup-repo-version": "1.1.5+git.48e2424",
     "setup-repo-is-frontend": "No"

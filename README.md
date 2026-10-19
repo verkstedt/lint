@@ -210,6 +210,18 @@ Run with `NODE_DEBUG=@verkstedt/lint` to see some debug logs.
   [`./typescript/tsconfig.base.json`](./typescript/tsconfig.base.json)
   to your `tsconfig` and keep your `extends` as it is.
 
+## Security advisories
+
+- [GHSA-238p-pmpm-9mq7] `katex`
+  - overridden in `package.json` to use `^0.19.0`
+  - pulled in by `@eslint/markdown` (tracked in [#753][katex-em])
+    → `micromark-extension-math` (fix in [#14][katex-mem]),
+    which requires `katex@^0.16`
+
+[GHSA-238p-pmpm-9mq7]: https://github.com/advisories/GHSA-238p-pmpm-9mq7
+[katex-mem]: https://github.com/micromark/micromark-extension-math/pull/14
+[katex-em]: https://github.com/eslint/markdown/issues/753
+
 ## License
 
 [ISC](./LICENSE)
