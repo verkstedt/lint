@@ -52,11 +52,7 @@ type ArrayOrItem<Type> = Type | Array<Type>;
 
 // Not all plugins are typed as {import('@eslint/core').Plugin}
 type AnyPlugin =
-  | Plugin
-  | typeof json
-  | typeof css
-  | typeof markdown
-  | typeof reactPlugin;
+  Plugin | typeof json | typeof css | typeof markdown | typeof reactPlugin;
 type Config = ArrayOrItem<
   Omit<Linter.Config, 'plugins'> & {
     plugins?: Record<string, AnyPlugin>;
