@@ -36,7 +36,7 @@ print_help ()
   cat <<EOF
 Test the ESLint config from this working copy in all repositories of the $org GitHub organisation that depend on @verkstedt/lint.
 
-Usage: $0 [OPTIONS]
+Usage: $0 [OPTIONS] -- [ESLINT_OPTIONS]
 
 Each repository is cloned (or updated), the packed working copy is installed into it and \`eslint .\` is run. Clones of repositories with problems and all ESLint logs are kept for inspection.
 
@@ -44,7 +44,6 @@ Options:
   -r REGEXP,
   --repo=REGEXP     When specified, will only process repos matching this regular expression (\`grep -E\`)
   -b, --baseline    Do not install this working copy, lint with the @verkstedt/lint version each repository already uses, to see pre-existing problems
-  --fix             Run EsLint with \`--fix\`
   -k, --keep-wins   Also keep clones of repositories without problems
   -h, --help        Show this help
 EOF
@@ -84,7 +83,6 @@ node_bin_dir ()
 baseline=0
 keep_wins=0
 repo_regexp=''
-autofix=0
 # `-:` makes getopts treat `--foo` as option `-` with argument `foo`
 while getopts "r:bhk-:" opt
 do
@@ -104,9 +102,6 @@ do
     b | -baseline)
       baseline=1
       ;;
-    -fix)
-      autofix=1
-      ;;
     k | -keep-wins)
       keep_wins=1
       ;;
@@ -114,18 +109,20 @@ do
       print_help
       exit 0 # EX_OK
       ;;
+    --)
+      has_arg_separator=1
+      break 2
+      ;;
     *)
-      print_help >&2
+      {
+        print_help
+        printf "\nERROR: Unknown argument: -%s\n" "$opt${OPTARG-}"
+      } >&2
       exit 64 # EX_USAGE
       ;;
   esac
 done
 shift $((OPTIND - 1))
-if [ $# -gt 0 ]
-then
-  print_help >&2
-  exit 64 # EX_USAGE
-fi
 
 if ! command -v gh >/dev/null
 then
@@ -379,18 +376,28 @@ do
   printf 'Installing packages... '
   case "$pkg_mgr" in
     npm)
-      set -- npm ci --ignore-scripts --no-audit --no-fund
+      run_install () {
+        npm ci --ignore-scripts --no-audit --no-fund
+      }
       ;;
     pnpm)
-      set -- pnpm install --frozen-lockfile --ignore-scripts
+      run_install () {
+        pnpm install --frozen-lockfile --ignore-scripts
+      }
       ;;
     yarn-classic)
-      set -- yarn install --frozen-lockfile --ignore-scripts
+      run_install () {
+        yarn install --frozen-lockfile --ignore-scripts
+      }
+      ;;
+    *)
+      printf 'ERROR: Unsupported package manager: %s\n' "$pkg_mgr"
+      exit 70 # EX_SOFTWARE
       ;;
   esac
   (
     set -x
-    cd "$install_root" && "$@"
+    cd "$install_root" && run_install
   ) >> "$log" 2>&1 || {
     printf '%s%s FAILED%s, see %s\n' "$red" "$fail_icon" "$reset" "$log"
     failed="$failed $slug"
@@ -403,19 +410,29 @@ do
     printf 'Installing @verkstedt/lint from this working copy... '
       case "$pkg_mgr" in
         npm)
-          set -- npm install --no-save --ignore-scripts --no-audit --no-fund
+          run_install_pkg () {
+            npm install --no-save --ignore-scripts --no-audit --no-fund "$@"
+          }
           ;;
         pnpm)
-          set -- pnpm add --save-dev --ignore-scripts --ignore-workspace-root-check
+          run_install_pkg () {
+            pnpm add --save-dev --ignore-scripts --ignore-workspace-root-check "$@"
+          }
           ;;
         yarn-classic)
-          # Yarn caches local tarballs by path, so keep the cache per run
-          set -- yarn add --dev --ignore-scripts --cache-folder "$yarn_cache"
+          run_install_pkg () {
+            # Yarn caches local tarballs by path, so keep the cache per run
+            yarn add --dev --ignore-scripts --cache-folder "$yarn_cache" "$@"
+          }
+          ;;
+        *)
+          printf 'ERROR: Unsupported package manager: %s\n' "$pkg_mgr"
+          exit 70 # EX_SOFTWARE
           ;;
       esac
     (
       set -x
-      cd "$pkg_root" && "$@" "$tarball"
+      cd "$pkg_root" && run_install_pkg "$tarball"
     ) >> "$log" 2>&1 || {
       printf '%s%s FAILED%s, see %s\n' "$red" "$fail_icon" "$reset" "$log"
       failed="$failed $slug"
@@ -428,22 +445,28 @@ do
   if (
     case "$pkg_mgr" in
       npm)
-        set -- npm exec -- eslint
+        run_eslint () {
+          npm exec -- eslint "$@"
+        }
         ;;
       pnpm)
-        set -- pnpm exec eslint
+        run_eslint () {
+          pnpm exec eslint "$@"
+        }
         ;;
       yarn-classic)
-        set -- yarn run eslint
+        run_eslint () {
+          yarn run eslint "$@"
+        }
+        ;;
+      *)
+        printf 'ERROR: Unsupported package manager: %s\n' "$pkg_mgr"
+        exit 70 # EX_SOFTWARE
         ;;
     esac
-    if [ "$autofix" -eq 1 ]
-    then
-      set -- "$@" --fix
-    fi
     cd "$pkg_root"
     set -x
-    "$@" .
+    run_eslint "$@" .
   ) >> "$log" 2>&1
   then
     printf '%s OK\n' "$ok_icon"
