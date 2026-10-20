@@ -371,6 +371,7 @@ async function createVerkstedtConfig({
                   .flatMap((patternStart) =>
                     ALL_JS_FILES_EXTS.map((ext) => `${patternStart}.${ext}`),
                   ),
+                { cwd: dir },
               ),
             )
           ).filter((filename) => {
