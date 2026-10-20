@@ -60,7 +60,7 @@
     "test/006-ts6"
   ],
   "scripts": {
-    "prepublishOnly": "npm run --silent holistic-check",
+    "prepublishOnly": "npm-run-all --print-name --print-label 'lint:!(ts)' build 'test:*'",
     "prepare": "npm run build",
     "lint": "npm-run-all --print-name --print-label 'lint:*'",
     "lint:js": "eslint .",
@@ -75,7 +75,7 @@
     "build": "npm-run-all --print-name --print-label 'build:*'",
     "build:ts": "tsc",
     "build:copy": "mkdir -p esm/ && cp -r prettier/.prettierignore esm/prettier/",
-    "holistic-check": "npm-run-all --print-name --print-label 'lint:!(ts)' build 'test:*' 'test-consumers -- -- --fix'"
+    "holistic-check": "npm run --silent prepublishOnly && npm-run-all --print-name --print-label 'test-consumers -- -- --fix'"
   },
   "peerDependencies": {
     "@eslint-react/eslint-plugin": ">=5.26.1",
