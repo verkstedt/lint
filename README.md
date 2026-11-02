@@ -234,6 +234,16 @@ Run with `NODE_DEBUG=@verkstedt/lint` to see some debug logs.
     - `@typescript-eslint/typescript-estree` (tracked in
       [#13125][mm-ts-eslint])
     - `eslint-plugin-import-x` (tracked in [#569][mm-import-x])
+- [GHSA-gcqx-w48m-w2h4] `deepmerge`
+  - doesn’t affect us, as we only merge our own config with our users’
+    config, not untrusted input
+  - [disputed with the CVE issuers][deepmerge-dispute], as it doesn’t
+    pollute the global prototype; the library author
+    [dismissed the report][deepmerge-author]
+  - pinned in `package.json` to exactly `4.1.2`, which is not affected;
+    once a patched version is released, switch back to a `^` range
+  - affects `deepmerge@>=4.2.0 <=4.3.1`, no patched version yet
+    (tracked in [#285][deepmerge-issue])
 
 [GHSA-238p-pmpm-9mq7]: https://github.com/advisories/GHSA-238p-pmpm-9mq7
 [katex-mem]: https://github.com/micromark/micromark-extension-math/pull/14
@@ -243,6 +253,10 @@ Run with `NODE_DEBUG=@verkstedt/lint` to see some debug logs.
 [mm-config-array]: https://github.com/eslint/rewrite/issues/532
 [mm-ts-eslint]: https://github.com/typescript-eslint/typescript-eslint/issues/13125
 [mm-import-x]: https://github.com/un-ts/eslint-plugin-import-x/issues/569
+[GHSA-gcqx-w48m-w2h4]: https://github.com/advisories/GHSA-gcqx-w48m-w2h4
+[deepmerge-issue]: https://github.com/TehShrike/deepmerge/issues/285
+[deepmerge-dispute]: https://github.com/TehShrike/deepmerge/issues/273#issuecomment-6509639897
+[deepmerge-author]: https://github.com/TehShrike/deepmerge/issues/273#issuecomment-5946012828
 
 ## License
 
