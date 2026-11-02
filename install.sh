@@ -47,8 +47,24 @@ pkg_ls ()
     fi
 }
 
+###
+# Uninstall packages
+# $@: package names or specifiers; versions are ignored
 pkg_uninstall ()
 {
+    # Strip versions, e.g. `eslint@^10.0.0` → `eslint`,
+    # `@scope/pkg@1.0.0` → `@scope/pkg`
+    for pkg in "$@"
+    do
+        shift
+        case "$pkg" in
+            ?*@*)
+                pkg="${pkg%@*}"
+                ;;
+        esac
+        set -- "$@" "$pkg"
+    done
+
     if [ -e yarn.lock ]
     then
         # With npm you can pass a list of pkgs to `uninstall` and it
@@ -56,7 +72,6 @@ pkg_uninstall ()
         # out.
         for pkg in "$@"
         do
-            pkg=$( printf "%s" "$pkg" | cut -d@ -f1 )
             has_pkg=$( jq --arg pkg "$pkg" '(.dependencies + .devDependencies) | has($pkg)' package.json )
             if [ true = "$has_pkg" ]
             then
