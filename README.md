@@ -222,10 +222,27 @@ Run with `NODE_DEBUG=@verkstedt/lint` to see some debug logs.
   - pulled in by `@eslint/markdown` (tracked in [#753][katex-em])
     → `micromark-extension-math` (fix in [#14][katex-mem]),
     which requires `katex@^0.16`
+- [GHSA-g3hv-75wg-m249] `minimatch`
+  - doesn’t affect us, as globs come from our own and our users’
+    configs, not from untrusted input
+  - can’t override in `package.json`, because `minimatch@^11` breaks
+    `eslint-plugin-import-x`, which uses the removed `makeRe`;
+    `npm audit fix --force` would downgrade `eslint-plugin-lingui`
+  - fixed in `minimatch@11.0.1`, waiting for it to land in:
+    - `eslint` (tracked in [#21463][mm-eslint])
+    - `@eslint/config-array` (tracked in [rewrite#532][mm-config-array])
+    - `@typescript-eslint/typescript-estree` (tracked in
+      [#13125][mm-ts-eslint])
+    - `eslint-plugin-import-x` (tracked in [#569][mm-import-x])
 
 [GHSA-238p-pmpm-9mq7]: https://github.com/advisories/GHSA-238p-pmpm-9mq7
 [katex-mem]: https://github.com/micromark/micromark-extension-math/pull/14
 [katex-em]: https://github.com/eslint/markdown/issues/753
+[GHSA-g3hv-75wg-m249]: https://github.com/advisories/GHSA-g3hv-75wg-m249
+[mm-eslint]: https://github.com/eslint/eslint/issues/21463
+[mm-config-array]: https://github.com/eslint/rewrite/issues/532
+[mm-ts-eslint]: https://github.com/typescript-eslint/typescript-eslint/issues/13125
+[mm-import-x]: https://github.com/un-ts/eslint-plugin-import-x/issues/569
 
 ## License
 
