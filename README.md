@@ -213,7 +213,12 @@ Run with `NODE_DEBUG=@verkstedt/lint` to see some debug logs.
 ## Security advisories
 
 - [GHSA-238p-pmpm-9mq7] `katex`
-  - overridden in `package.json` to use `^0.19.0`
+  - doesn’t affect us, as `@eslint/markdown` only parses math syntax and
+    never renders it with `katex`
+  - overridden in `package.json` to use `^0.19.0`; npm doesn’t apply
+    it to projects that install `@verkstedt/lint`, add the same
+    `overrides` entry to your project if you want to keep it out of
+    `npm audit`
   - pulled in by `@eslint/markdown` (tracked in [#753][katex-em])
     → `micromark-extension-math` (fix in [#14][katex-mem]),
     which requires `katex@^0.16`
