@@ -213,20 +213,50 @@ Run with `NODE_DEBUG=@verkstedt/lint` to see some debug logs.
 ## Security advisories
 
 - [GHSA-238p-pmpm-9mq7] `katex`
-  - overridden in `package.json` to use `^0.19.0`
+  - doesn’t affect us, as `@eslint/markdown` only parses math syntax and
+    never renders it with `katex`
+  - overridden in `package.json` to use `^0.19.0`; npm doesn’t apply
+    it to projects that install `@verkstedt/lint`, add the same
+    `overrides` entry to your project if you want to keep it out of
+    `npm audit`
   - pulled in by `@eslint/markdown` (tracked in [#753][katex-em])
     → `micromark-extension-math` (fix in [#14][katex-mem]),
     which requires `katex@^0.16`
-- [GHSA-vfj7-8cjw-p6xm] `braces`
-  - no update path exists, [disputed by the library author][braces-dispute]
-  - doesn’t affect us, as we only match patterns we write ourselves
-  - `npm audit fix --force` downgrades `eslint-plugin-lingui`
+- [GHSA-g3hv-75wg-m249] `minimatch`
+  - doesn’t affect us, as globs come from our own and our users’
+    configs, not from untrusted input
+  - can’t override in `package.json`, because `minimatch@^11` breaks
+    `eslint-plugin-import-x`, which uses the removed `makeRe`;
+    `npm audit fix --force` would downgrade `eslint-plugin-lingui`
+  - fixed in `minimatch@11.0.1`, waiting for it to land in:
+    - `eslint` (tracked in [#21463][mm-eslint])
+    - `@eslint/config-array` (tracked in [rewrite#532][mm-config-array])
+    - `@typescript-eslint/typescript-estree` (tracked in
+      [#13125][mm-ts-eslint])
+    - `eslint-plugin-import-x` (tracked in [#569][mm-import-x])
+- [GHSA-gcqx-w48m-w2h4] `deepmerge`
+  - doesn’t affect us, as we only merge our own config with our users’
+    config, not untrusted input
+  - [disputed with the CVE issuers][deepmerge-dispute], as it doesn’t
+    pollute the global prototype; the library author
+    [dismissed the report][deepmerge-author]
+  - pinned in `package.json` to exactly `4.1.2`, which is not affected;
+    once a patched version is released, switch back to a `^` range
+  - affects `deepmerge@>=4.2.0 <=4.3.1`, no patched version yet
+    (tracked in [#285][deepmerge-issue])
 
 [GHSA-238p-pmpm-9mq7]: https://github.com/advisories/GHSA-238p-pmpm-9mq7
 [katex-mem]: https://github.com/micromark/micromark-extension-math/pull/14
 [katex-em]: https://github.com/eslint/markdown/issues/753
-[GHSA-vfj7-8cjw-p6xm]: https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
-[braces-dispute]: https://github.com/github/advisory-database/pull/10132#issuecomment-6065200314
+[GHSA-g3hv-75wg-m249]: https://github.com/advisories/GHSA-g3hv-75wg-m249
+[mm-eslint]: https://github.com/eslint/eslint/issues/21463
+[mm-config-array]: https://github.com/eslint/rewrite/issues/532
+[mm-ts-eslint]: https://github.com/typescript-eslint/typescript-eslint/issues/13125
+[mm-import-x]: https://github.com/un-ts/eslint-plugin-import-x/issues/569
+[GHSA-gcqx-w48m-w2h4]: https://github.com/advisories/GHSA-gcqx-w48m-w2h4
+[deepmerge-issue]: https://github.com/TehShrike/deepmerge/issues/285
+[deepmerge-dispute]: https://github.com/TehShrike/deepmerge/issues/273#issuecomment-6509639897
+[deepmerge-author]: https://github.com/TehShrike/deepmerge/issues/273#issuecomment-5946012828
 
 ## License
 
