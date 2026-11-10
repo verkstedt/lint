@@ -294,19 +294,43 @@ function getVerkstedtConfig({
         // Config files
         '.storybook/**',
         '*.config.*',
-        '.rc*',
         // CLI scripts
         'scripts/**',
         // Test files
-        `*.test.*`,
+        '**/*.test.*',
         '**/__tests__/**',
+        // Stories
+        '**/*.stories.*',
       ],
       rules: {
         'complexity': ['error', { max: 20 }],
         'no-console': 'off',
         'no-await-in-loop': 'off',
         'css/no-important': 'off',
+        'e18e/prefer-static-regex': 'off',
         '@eslint-react/no-array-index-key': 'off',
+        'react-hooks/rules-of-hooks': 'off',
+        ...(!typescriptEsLintPlugin
+          ? {}
+          : {
+              '@typescript-eslint/no-floating-promises': [
+                'error',
+                {
+                  allowForKnownSafeCalls: [
+                    // they return promises that the runner tracks itself
+                    {
+                      from: 'package',
+                      package: 'node:test',
+                      name: ['describe', 'it', 'test', 'suite'],
+                    },
+                  ],
+                },
+              ],
+            }),
+        // Stubs often implement Promise-returning interfaces
+        '@typescript-eslint/require-await': 'off',
+        // Asserting on Vitest spies, e.g. `expect(obj.method).toHaveBeenCalled()`
+        '@typescript-eslint/unbound-method': 'off',
       },
     },
     {
