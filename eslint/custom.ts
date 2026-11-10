@@ -11,6 +11,7 @@ import {
   ALL_JS_FILES_EXTS,
   CSS_FILES,
   MARKDOWN_FILES,
+  NON_APP_FILES,
 } from './file-globs.ts';
 import type { NoRestrictedImportsConfig } from './types.ts';
 
@@ -290,26 +291,27 @@ function getVerkstedtConfig({
     },
     {
       name: 'Overwrites from recommended configs: Be less restrictive in non–application code',
-      files: [
-        // Config files
-        '.storybook/**',
-        '*.config.*',
-        // CLI scripts
-        'scripts/**',
-        // Test files
-        '**/*.test.*',
-        '**/__tests__/**',
-        // Stories
-        '**/*.stories.*',
-      ],
+      files: NON_APP_FILES,
       rules: {
-        'complexity': ['error', { max: 20 }],
         'no-console': 'off',
         'no-await-in-loop': 'off',
         'css/no-important': 'off',
         'e18e/prefer-static-regex': 'off',
         '@eslint-react/no-array-index-key': 'off',
         'react-hooks/rules-of-hooks': 'off',
+        '@typescript-eslint/require-await': 'off',
+        '@typescript-eslint/unbound-method': 'off',
+      },
+    },
+    // Here rules are loosened rather than turned off. A configured rule
+    // needs its plugin loaded, so this block only targets JS files.
+    {
+      name: 'Overwrites from recommended configs: Be less restrictive in non–application JS code',
+      files: NON_APP_FILES.flatMap((nonAppGlob) =>
+        ALL_JS_FILES.map((jsGlob) => [nonAppGlob, jsGlob]),
+      ),
+      rules: {
+        complexity: ['error', { max: 20 }],
         ...(!typescriptEsLintPlugin
           ? {}
           : {
@@ -327,10 +329,6 @@ function getVerkstedtConfig({
                 },
               ],
             }),
-        // Stubs often implement Promise-returning interfaces
-        '@typescript-eslint/require-await': 'off',
-        // Asserting on Vitest spies, e.g. `expect(obj.method).toHaveBeenCalled()`
-        '@typescript-eslint/unbound-method': 'off',
       },
     },
     {
