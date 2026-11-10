@@ -8,6 +8,20 @@ const REACT_JS_EXTS = ['jsx', ...REACT_TS_EXTS];
 export const ALL_JS_FILES_EXTS = [...JS_EXTS, ...REACT_JS_EXTS];
 export const ALL_JS_FILES = [`**/*.{${ALL_JS_FILES_EXTS.join(',')}}`];
 
+/** Files that are not part of the application: configs, CLI scripts, tests and stories */
+export const NON_APP_FILES = [
+  // Config files
+  '.storybook/**',
+  '*.config.*',
+  // CLI scripts
+  'scripts/**',
+  // Test files
+  '**/*.test.*',
+  '**/__tests__/**',
+  // Stories
+  '**/*.stories.*',
+];
+
 const CSS_EXTS = ['css'];
 export const CSS_FILES = [`**/*.css`];
 
